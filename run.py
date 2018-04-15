@@ -6,21 +6,54 @@ from __future__ import division
 
 # Purpose: Main file for Viterbi algorithm implementation
 
+import math
 import random
 import numpy
+
+def calc_cell(seq, m, n):
+    global C
+    global N, B, S, P, V
+    global T
+
+    # if at beginning of strip, use starting probabilities
+    if n == 0:
+        pVal = P[m][V[m].index(seq[0])]
+        theMax = math.log(B[m]*pVal + C)
+        T[m][n] = theMax
+        return theMax
+
+    vals = []
+    for i in range(len(N)):
+        # current probability of rolling at n
+        pVal = P[m][V[m].index(seq[n])]
+        # switching from prev to cur Die
+        pSwitch = S[i][m]
+        # value from previous square (for all diagonals)
+        if T[i][n-1] == None:
+            calc_cell(seq, i, n-1)
+        preVal = T[i][n-1]
+        # use log to prevent overflow
+        tempVal = math.log(pVal * pSwitch + C) + preVal
+        vals.append(tempVal)
+
+    theMax = max(vals)
+    T[m][n] = theMax
+    return theMax
 
 
 def calc_last(seq):
     global N, B, S, P, V
     global T
 
-    # prevs = []
-    # for i in range(len(N)):
-    #     # don't worry about checking if equal to None first
-    #     # will always be None at tiem of calculation
-    #     T[i][-1] = calc_cell(seq, i, len(seq)-1)
-    #     prevs.append(T[i][-1])
+    lasts = []
+    for i in range(len(N)):
+        # don't worry about checking if equal to None first
+        # will always be None at tiem of calculation
+        T[i][-1] = calc_cell(seq, i, len(seq)-1)
+        lasts.append(T[i][-1])
 
+    logMax = max(lasts)
+    return logMax
 
 
 def most_likely_states(seq):
@@ -42,8 +75,22 @@ def most_likely_states(seq):
     # dynamic programming
     x = calc_last(seq)
 
-    return T
+    G = guess_sequence(T)
 
+    return G
+
+
+def guess_sequence(T):
+    sequence = []
+
+    for i in range(len(T[0])):
+        vals = []
+        for j in range(len(T)):
+            vals.append(T[j][i])
+        maxVal = max(vals)
+        sequence.append(vals.index(maxVal))
+
+    return sequence
 
 
 def generate_sequence(n=50):
@@ -83,7 +130,10 @@ def generate_sequence(n=50):
 if __name__ == "__main__":
     # d0 is fair
     # d1 is weighted
+    global C
     global N, B, S, D, V
+    global T
+    C = +0.000000000000000000000000000001
 
     # dice indices
     N = [0, 1]
@@ -92,8 +142,8 @@ if __name__ == "__main__":
     B = [1, 0]
 
     # switching probabilities
-    S =    [[0.9, 0.1],
-             [0.4, 0.6]]
+    S =    [[5/6, 1/6],
+             [2/5, 3/5]]
 
     # die probabilities
     P =    [[1/6, 1/6, 1/6, 1/6, 1/6, 1/6],
@@ -104,10 +154,10 @@ if __name__ == "__main__":
             [1, 2, 3, 4, 5, 6]]
 
     # generate sequences
-    S1 = generate_sequence(50)
-
-    print(S1[0])
-    print(S1[1])
+    S1 = generate_sequence(100)
 
     # find most likely sequence using dynamic programming
-    # L = most_likely_states(S1[0])
+    G = most_likely_states(S1[0])
+
+    for i in range(len(G)):
+        print("{}\t {}\t{}".format(S1[0][i], S1[1][i], G[i]))
