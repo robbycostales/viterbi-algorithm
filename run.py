@@ -9,17 +9,20 @@ from __future__ import division
 import math
 import random
 import numpy
+import time
 
 def calc_cell(seq, m, n):
     global C
     global N, B, S, P, V
     global T
+    global track
 
     # if at beginning of strip, use starting probabilities
     if n == 0:
         pVal = P[m][V[m].index(seq[0])]
         theMax = math.log(B[m]*pVal + C)
         T[m][n] = theMax
+        track[m][n] = -1
         return theMax
 
     vals = []
@@ -37,13 +40,16 @@ def calc_cell(seq, m, n):
         vals.append(tempVal)
 
     theMax = max(vals)
+    maxi = vals.index(theMax)
     T[m][n] = theMax
+    track[m][n] = maxi
     return theMax
 
 
 def calc_last(seq):
     global N, B, S, P, V
     global T
+    global track
 
     lasts = []
     for i in range(len(N)):
@@ -53,7 +59,8 @@ def calc_last(seq):
         lasts.append(T[i][-1])
 
     logMax = max(lasts)
-    return logMax
+    maxi = lasts.index(logMax)
+    return logMax, maxi
 
 
 def most_likely_states(seq):
@@ -69,28 +76,32 @@ def most_likely_states(seq):
     """
     global N, B, S, P, V
     global T
+    global track
 
     T = [[None for j in range(len(seq))] for i in range(len(N))]
+    track = [[None for j in range(len(seq))] for i in range(len(N))]
 
     # dynamic programming
-    x = calc_last(seq)
+    x, xi = calc_last(seq)
 
-    G = guess_sequence(T)
+    G = guess_sequence(T, track, xi)
 
     return G
 
 
-def guess_sequence(T):
+def guess_sequence(T, track, xi):
     sequence = []
 
-    for i in range(len(T[0])):
-        vals = []
-        for j in range(len(T)):
-            vals.append(T[j][i])
-        maxVal = max(vals)
-        sequence.append(vals.index(maxVal))
+    x = xi
+    sequence.insert(0, xi)
+    for i in range(len(track[0])-1, 0, -1):
+        x = track[x][i]
+        sequence.insert(0, x)
 
     return sequence
+
+
+
 
 
 def generate_sequence(n=50):
@@ -133,31 +144,36 @@ if __name__ == "__main__":
     global C
     global N, B, S, D, V
     global T
-    C = +0.000000000000000000000000000001
+    global track
+
+    C = +0.0000001 # constant used to combat log(0)
 
     # dice indices
-    N = [0, 1]
+    N = [0, 1] # kind of useless, but defines the dice names
 
     # beginning probabilities
-    B = [1, 0]
+    B = [0.9, 0.1] # [ starting w 0, starting w 1]
 
     # switching probabilities
-    S =    [[5/6, 1/6],
-             [2/5, 3/5]]
+    S =    [[9/10, 1/10], # [0-0, 0-1]
+             [1/5, 4/5]]   # [1-0, 1-1]
 
     # die probabilities
-    P =    [[1/6, 1/6, 1/6, 1/6, 1/6, 1/6],
-            [1/10, 1/10, 1/10, 1/10, 1/10, 1/2]]
+    P =    [[1/6, 1/6, 1/6, 1/6, 1/6, 1/6],  # d0 prob dist
+            [1/10, 1/10, 1/10, 1/10, 1/10, 1/2]] # d1 prob dist
 
     # die values
-    V =     [[1, 2, 3, 4, 5, 6],
-            [1, 2, 3, 4, 5, 6]]
+    V =     [[1, 2, 3, 4, 5, 6], # d0
+            [1, 2, 3, 4, 5, 6]]  # d1
 
     # generate sequences
-    S1 = generate_sequence(100)
+    S1 = generate_sequence(50)
 
     # find most likely sequence using dynamic programming
     G = most_likely_states(S1[0])
 
+    # prints comparisons
+    # order (vals, generated, guess)
+
     for i in range(len(G)):
-        print("{}\t {}\t{}".format(S1[0][i], S1[1][i], G[i]))
+        print("\t{}  {} {}".format(S1[0][i], S1[1][i], G[i]))
