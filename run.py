@@ -166,10 +166,10 @@ if __name__ == "__main__":
     V =     [[1, 2, 3, 4, 5, 6], # d0
             [1, 2, 3, 4, 5, 6]]  # d1
 
-    # generate sequences
+    # generate sequences (value seq, states seq)
     S1 = generate_sequence(50)
 
-    # find most likely sequence using dynamic programming
+    # find most likely state-sequence using dynamic programming
     G = most_likely_states(S1[0])
 
     # prints comparisons
