@@ -175,5 +175,6 @@ if __name__ == "__main__":
     # prints comparisons
     # order (vals, generated, guess)
 
+    print("\n( generated sequence, actual states, guessed states )\n")
     for i in range(len(G)):
         print("\t{}  {} {}".format(S1[0][i], S1[1][i], G[i]))
